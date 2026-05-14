@@ -2,19 +2,15 @@
 Run with: python -m app.seed
 
 Creates a demo tenant and prints the raw API key.
-Use this key as the X-API-Key header in all requests.
+Run `alembic upgrade head` first to create the schema.
 """
 import asyncio
 
-from app.database import AsyncSessionLocal, engine
-from app.database import Base
+from app.database import AsyncSessionLocal
 from app.models import Tenant
 
 
 async def main():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
     raw_key = Tenant.generate_api_key()
     key_hash = Tenant.hash_api_key(raw_key)
 

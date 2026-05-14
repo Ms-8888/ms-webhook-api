@@ -103,6 +103,7 @@ async def retry_worker(redis: Redis) -> None:
                         Delivery.status == "pending",
                         Delivery.next_retry_at <= now,
                         Delivery.attempt_count > 0,
+                        Delivery.attempt_count < MAX_ATTEMPTS,
                     )
                 )
                 ids = result.scalars().all()
