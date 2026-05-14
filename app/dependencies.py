@@ -15,6 +15,8 @@ def set_redis(r: Redis) -> None:
 
 
 def get_redis() -> Redis:
+    if _redis is None:
+        raise RuntimeError("Redis client has not been initialized")
     return _redis
 
 
@@ -33,9 +35,12 @@ async def check_rate_limit(
     redis: Redis = Depends(get_redis),
 ) -> Tenant:
     key = f"rate:{tenant.id}:events"
-    count = await redis.incr(key)
-    if count == 1:
-        await redis.expire(key, 3600)
+    # SET NX initializes the key with TTL atomically; INCR then counts requests.
+    # Using a pipeline avoids the race where INCR succeeds but EXPIRE never runs.
+    async with redis.pipeline(transaction=True) as pipe:
+        await pipe.set(key, 0, ex=3600, nx=True)
+        await pipe.incr(key)
+        _, count = await pipe.execute()
     if count > 100:
         raise HTTPException(
             status_code=429,

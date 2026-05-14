@@ -40,6 +40,12 @@ async def redis_client():
     await client.aclose()
 
 
+@pytest_asyncio.fixture(autouse=True)
+async def flush_redis(redis_client):
+    yield
+    await redis_client.flushdb()
+
+
 @pytest_asyncio.fixture
 async def tenant(db: AsyncSession):
     raw_key = secrets.token_hex(16)
