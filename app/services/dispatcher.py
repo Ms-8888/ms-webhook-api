@@ -17,7 +17,6 @@ async def queue_event(event: Event, db: AsyncSession, redis: Redis) -> int:
     )
     endpoints = result.scalars().all()
 
-    delivery_ids = []
     for endpoint in endpoints:
         delivery = Delivery(event_id=event.id, endpoint_id=endpoint.id)
         db.add(delivery)
