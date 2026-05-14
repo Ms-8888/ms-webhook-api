@@ -7,7 +7,7 @@ from app.database import get_db
 from app.dependencies import check_rate_limit, get_current_tenant, get_redis
 from app.models import Delivery, Endpoint, Event, Tenant
 from app.schemas import DeliveryOut, EventCreate, EventOut
-from app.services.dispatcher import queue_event
+from app.services.dispatcher import QUEUE_KEY, queue_event
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -22,9 +22,11 @@ async def fire_event(
     event = Event(tenant_id=tenant.id, event_type=body.event_type, payload=body.payload)
     db.add(event)
     await db.flush()
-    queued = await queue_event(event, db, redis)
+    delivery_ids = await queue_event(event, db)
     await db.commit()
-    return {"event_id": event.id, "queued_deliveries": queued}
+    if delivery_ids:
+        await redis.rpush(QUEUE_KEY, *[str(d) for d in delivery_ids])
+    return {"event_id": event.id, "queued_deliveries": len(delivery_ids)}
 
 
 @router.get("", response_model=list[EventOut])
@@ -53,7 +55,8 @@ async def get_deliveries(
     result = await db.execute(
         select(Delivery, Endpoint.url)
         .join(Endpoint, Delivery.endpoint_id == Endpoint.id)
-        .where(Delivery.event_id == event_id)
+        .join(Event, Delivery.event_id == Event.id)
+        .where(Delivery.event_id == event_id, Event.tenant_id == tenant.id)
         .order_by(Delivery.created_at.asc())
     )
     rows = result.all()
