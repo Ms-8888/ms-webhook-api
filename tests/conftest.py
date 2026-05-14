@@ -1,5 +1,5 @@
-import asyncio
-import pytest
+import secrets
+
 import pytest_asyncio
 import redis.asyncio as aioredis
 from httpx import ASGITransport, AsyncClient
@@ -12,13 +12,6 @@ from app.models import Tenant
 
 TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/webhooks_test"
 TEST_REDIS_URL = "redis://localhost:6379"
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -49,7 +42,7 @@ async def redis_client():
 
 @pytest_asyncio.fixture
 async def tenant(db: AsyncSession):
-    raw_key = "test-api-key-1234"
+    raw_key = secrets.token_hex(16)
     t = Tenant(name="Test Tenant", api_key_hash=Tenant.hash_api_key(raw_key))
     db.add(t)
     await db.commit()

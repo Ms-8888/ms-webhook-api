@@ -8,7 +8,6 @@ from datetime import datetime, timedelta, timezone
 import httpx
 from redis.asyncio import Redis
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import AsyncSessionLocal
 from app.models import Delivery, Endpoint
