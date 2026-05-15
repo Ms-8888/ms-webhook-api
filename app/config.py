@@ -9,7 +9,9 @@ class Settings(BaseSettings):
     @field_validator("database_url")
     @classmethod
     def ensure_async_driver(cls, v: str) -> str:
-        # Supabase and most providers give postgresql:// — asyncpg needs postgresql+asyncpg://
+        # Most providers give postgresql:// — asyncpg needs postgresql+asyncpg://
+        # Strip ?sslmode=require — asyncpg negotiates SSL automatically
+        v = v.split("?")[0]
         if v.startswith("postgresql://") or v.startswith("postgres://"):
             return v.replace("://", "+asyncpg://", 1)
         return v
