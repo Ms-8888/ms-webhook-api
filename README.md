@@ -35,6 +35,7 @@ git clone https://github.com/Ms-8888/ms-webhook-api
 cd ms-webhook-api
 cp .env.example .env
 docker compose -f deploy/docker-compose.yml up -d
+alembic upgrade head     # creates schema + indexes
 python -m app.seed       # creates demo tenant, prints your API key
 ```
 

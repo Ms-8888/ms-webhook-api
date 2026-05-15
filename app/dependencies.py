@@ -40,11 +40,12 @@ async def check_rate_limit(
     async with redis.pipeline(transaction=True) as pipe:
         await pipe.set(key, 0, ex=3600, nx=True)
         await pipe.incr(key)
-        _, count = await pipe.execute()
+        await pipe.ttl(key)
+        _, count, ttl = await pipe.execute()
     if count > 100:
         raise HTTPException(
             status_code=429,
             detail="Rate limit exceeded: 100 events per hour",
-            headers={"Retry-After": "3600"},
+            headers={"Retry-After": str(max(int(ttl), 1))},
         )
     return tenant
