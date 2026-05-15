@@ -2,7 +2,7 @@
 Run with: python -m app.seed
 
 Creates a demo tenant and prints the raw API key.
-Run `alembic upgrade head` first to create the schema.
+Requires schema to exist — run `alembic upgrade head` or start the app first.
 """
 import asyncio
 

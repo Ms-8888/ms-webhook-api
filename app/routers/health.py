@@ -31,27 +31,43 @@ async def health(db: AsyncSession = Depends(get_db), redis: Redis = Depends(get_
 
 
 @router.get("/metrics", response_model=MetricsOut)
-async def metrics(db: AsyncSession = Depends(get_db), redis: Redis = Depends(get_redis)):
+async def metrics(
+    tenant: Tenant = Depends(get_current_tenant),
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+):
     now = datetime.now(timezone.utc)
     day_ago = now - timedelta(hours=24)
 
     total_events = await db.scalar(
-        select(func.count(Event.id)).where(Event.created_at >= day_ago)
+        select(func.count(Event.id)).where(
+            Event.tenant_id == tenant.id, Event.created_at >= day_ago
+        )
     ) or 0
 
     total_deliveries = await db.scalar(
-        select(func.count(Delivery.id)).where(Delivery.created_at >= day_ago)
+        select(func.count(Delivery.id))
+        .join(Event, Delivery.event_id == Event.id)
+        .where(Event.tenant_id == tenant.id, Delivery.created_at >= day_ago)
     ) or 0
 
     delivered = await db.scalar(
-        select(func.count(Delivery.id)).where(
-            Delivery.created_at >= day_ago, Delivery.status == "delivered"
+        select(func.count(Delivery.id))
+        .join(Event, Delivery.event_id == Event.id)
+        .where(
+            Event.tenant_id == tenant.id,
+            Delivery.created_at >= day_ago,
+            Delivery.status == "delivered",
         )
     ) or 0
 
     failed = await db.scalar(
-        select(func.count(Delivery.id)).where(
-            Delivery.created_at >= day_ago, Delivery.status == "failed"
+        select(func.count(Delivery.id))
+        .join(Event, Delivery.event_id == Event.id)
+        .where(
+            Event.tenant_id == tenant.id,
+            Delivery.created_at >= day_ago,
+            Delivery.status == "failed",
         )
     ) or 0
 
