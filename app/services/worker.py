@@ -75,19 +75,20 @@ async def _dispatch_delivery(delivery_id: int, redis: Redis) -> None:
 
 
 async def dispatch_worker(redis: Redis) -> None:
-    """Task 1: Pop new deliveries from Redis queue and dispatch them."""
+    """Task 1: Poll Redis queue for new deliveries and dispatch them."""
     logger.info("Dispatch worker started")
     while True:
         try:
-            item = await redis.blpop(QUEUE_KEY, timeout=5)
+            item = await redis.lpop(QUEUE_KEY)
             if item:
-                _, delivery_id_bytes = item
-                await _dispatch_delivery(int(delivery_id_bytes), redis)
+                await _dispatch_delivery(int(item), redis)
+            else:
+                await asyncio.sleep(2)
         except asyncio.CancelledError:
             break
         except Exception as exc:
             logger.error("Dispatch worker error: %s", exc)
-            await asyncio.sleep(1)
+            await asyncio.sleep(5)
 
 
 async def retry_worker(redis: Redis) -> None:
