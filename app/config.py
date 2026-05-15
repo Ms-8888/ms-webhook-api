@@ -1,9 +1,18 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     database_url: str
     redis_url: str = "redis://localhost:6379"
+
+    @field_validator("database_url")
+    @classmethod
+    def ensure_async_driver(cls, v: str) -> str:
+        # Supabase and most providers give postgresql:// — asyncpg needs postgresql+asyncpg://
+        if v.startswith("postgresql://") or v.startswith("postgres://"):
+            return v.replace("://", "+asyncpg://", 1)
+        return v
 
     class Config:
         env_file = ".env"
