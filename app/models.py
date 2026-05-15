@@ -2,7 +2,7 @@ import hashlib
 import secrets
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -64,6 +64,7 @@ class Event(Base):
 
 class Delivery(Base):
     __tablename__ = "deliveries"
+    __table_args__ = (Index("ix_deliveries_status_retry", "status", "next_retry_at"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), nullable=False, index=True)

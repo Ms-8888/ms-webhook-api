@@ -1,3 +1,4 @@
+import os
 import secrets
 
 import pytest_asyncio
@@ -10,8 +11,8 @@ from app.dependencies import set_redis
 from app.main import app
 from app.models import Tenant
 
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/webhooks_test"
-TEST_REDIS_URL = "redis://localhost:6379"
+TEST_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/webhooks_test")
+TEST_REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 
 
 @pytest_asyncio.fixture(scope="session")
