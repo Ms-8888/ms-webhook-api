@@ -8,13 +8,17 @@ from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
 from redis.exceptions import ConnectionError, TimeoutError
 
+from sqlalchemy import func, select
+
 from app.config import settings
-from app.database import Base, engine
+from app.database import AsyncSessionLocal, Base, engine
 from app.dependencies import set_redis
+from app.models import Tenant
 from app.routers import endpoints, events, health
 from app.services.worker import dispatch_worker, retry_worker
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 _tasks: list[asyncio.Task] = []
 
@@ -23,6 +27,14 @@ _tasks: list[asyncio.Task] = []
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    async with AsyncSessionLocal() as db:
+        count = await db.scalar(select(func.count()).select_from(Tenant))
+        if count == 0:
+            raw_key = Tenant.generate_api_key()
+            db.add(Tenant(name="Demo Tenant", api_key_hash=Tenant.hash_api_key(raw_key)))
+            await db.commit()
+            logger.info("=== DEMO TENANT CREATED — API Key: %s ===", raw_key)
 
     redis = aioredis.from_url(
         settings.redis_url,
