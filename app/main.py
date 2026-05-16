@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 import redis.asyncio as aioredis
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
 from redis.exceptions import ConnectionError, TimeoutError
@@ -58,6 +59,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Webhook Delivery API", version="1.0.0", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://ms-8888.github.io", "http://localhost:5173"],
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["X-API-Key", "Content-Type"],
+)
+
 app.include_router(endpoints.router)
 app.include_router(events.router)
 app.include_router(health.router)
