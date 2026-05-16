@@ -4,6 +4,9 @@ from contextlib import asynccontextmanager
 
 import redis.asyncio as aioredis
 from fastapi import FastAPI
+from redis.asyncio.retry import Retry
+from redis.backoff import ExponentialBackoff
+from redis.exceptions import ConnectionError, TimeoutError
 
 from app.config import settings
 from app.database import Base, engine
@@ -21,7 +24,14 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    redis = aioredis.from_url(settings.redis_url, decode_responses=True)
+    redis = aioredis.from_url(
+        settings.redis_url,
+        decode_responses=True,
+        socket_keepalive=True,
+        health_check_interval=30,
+        retry=Retry(ExponentialBackoff(), 3),
+        retry_on_error=[ConnectionError, TimeoutError],
+    )
     set_redis(redis)
 
     _tasks.append(asyncio.create_task(dispatch_worker(redis)))
