@@ -29,13 +29,17 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    async with AsyncSessionLocal() as db:
-        count = await db.scalar(select(func.count()).select_from(Tenant))
-        if count == 0:
-            raw_key = Tenant.generate_api_key()
-            db.add(Tenant(name="Demo Tenant", api_key_hash=Tenant.hash_api_key(raw_key)))
-            await db.commit()
-            logger.info("=== DEMO TENANT CREATED — API Key: %s ===", raw_key)
+    try:
+        async with AsyncSessionLocal() as db:
+            count = await db.scalar(select(func.count()).select_from(Tenant))
+            if count == 0:
+                raw_key = Tenant.generate_api_key()
+                db.add(Tenant(name="Demo Tenant", api_key_hash=Tenant.hash_api_key(raw_key)))
+                await db.commit()
+                logger.warning("=== DEMO TENANT CREATED — copy API key from Render env or DB, do not log raw keys in production ===")
+                logger.warning("=== DEMO API KEY (retrieve once): %s ===", raw_key)
+    except Exception as exc:
+        logger.error("Seed step failed (non-fatal): %s", exc)
 
     redis = aioredis.from_url(
         settings.redis_url,
