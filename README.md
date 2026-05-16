@@ -6,6 +6,26 @@ Built with FastAPI, PostgreSQL, and Redis. Companion dashboard: [ms-webhook-ui](
 
 ---
 
+## Live Demo
+
+**API:** `https://ms-webhook-api.onrender.com`  
+**Demo API key:** `cc9802255d27255bddf2c55d256f8466e1b4600e0a8ef21c2075ab50f16b2049`
+
+> Hosted on Render free tier — first request may take ~30s to wake the instance.
+
+Try it now:
+
+```bash
+curl -X POST https://ms-webhook-api.onrender.com/events \
+  -H "X-API-Key: cc9802255d27255bddf2c55d256f8466e1b4600e0a8ef21c2075ab50f16b2049" \
+  -H "Content-Type: application/json" \
+  -d '{"event_type": "order.created", "payload": {"order_id": 42}}'
+```
+
+Or open the **[live dashboard →](https://ms-8888.github.io/ms-webhook-ui/)** and paste the key into Settings.
+
+---
+
 ## Architecture
 
 ```
