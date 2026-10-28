@@ -1,8 +1,19 @@
 # ms-webhook-api
 
-An async webhook delivery API. Register endpoint URLs, fire events, and the system fans out signed HTTP POST requests to all your endpoints — with automatic retry logic and full delivery tracking.
+An async webhook delivery API built with FastAPI, PostgreSQL and Redis. Companion dashboard: [ms-webhook-ui](https://github.com/Ms-8888/ms-webhook-ui).
 
-Built with FastAPI, PostgreSQL, and Redis. Companion dashboard: [ms-webhook-ui](https://github.com/Ms-8888/ms-webhook-ui).
+## Problem
+
+An application that notifies customers of events (an order was created, a payment failed) has to call their servers. Those servers are sometimes down, slow or wrong. Sending the request inside the user's own request blocks it, loses the event when the customer's server is down, and gives no way to prove what was sent.
+
+## Solution
+
+Your application sends one event to this API and gets `202 Accepted` back immediately. A background worker then delivers it to every registered endpoint:
+
+- **Signed:** each request carries an HMAC-SHA256 signature and timestamp so the receiver can verify the sender.
+- **Retried:** failures are retried at +1, +5 and +30 minutes; the retry state is stored in PostgreSQL, so it survives a restart.
+- **Tracked:** every attempt, error and final status is stored and readable through the API.
+- **Guarded:** endpoint URLs pointing at private or local addresses are rejected (SSRF check), API keys are stored hashed, and each tenant is limited to 100 events per hour.
 
 ---
 
@@ -109,6 +120,8 @@ curl http://localhost:8000/events/1/deliveries \
 
 ### 4. Check metrics
 
+Example response (illustrative values):
+
 ```bash
 curl http://localhost:8000/metrics -H "X-API-Key: <your-key>"
 ```
@@ -159,6 +172,14 @@ X-Webhook-Timestamp: <unix_timestamp>
 | `GET` | `/metrics` | Delivery stats |
 
 Auth: `X-API-Key` header on all routes. Rate limit: 100 events/hour per tenant.
+
+---
+
+## Limitations
+
+- The dispatch and retry workers run inside the API process; there is no separate worker service or horizontal scaling.
+- The hosted demo runs on free tiers (Render, Neon, Upstash), so expect cold starts.
+- Tested with the 10 automated tests in `tests/` and manual runs; there are no load-test numbers.
 
 ---
 
