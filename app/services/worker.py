@@ -62,8 +62,13 @@ async def _dispatch_delivery(delivery_id: int, redis: Redis) -> None:
             delivery.delivered_at = datetime.now(timezone.utc)
 
         except Exception as exc:
-            error_msg = f"Connection timeout after {int(DELIVERY_TIMEOUT * 1000)}ms" if isinstance(exc, httpx.TimeoutException) else str(exc)
-            delivery.last_error = f"{error_msg} — attempt {delivery.attempt_count} of {MAX_ATTEMPTS}"
+            if isinstance(exc, httpx.TimeoutException):
+                error_msg = f"Connection timeout after {int(DELIVERY_TIMEOUT * 1000)}ms"
+            else:
+                error_msg = str(exc)
+            delivery.last_error = (
+                f"{error_msg} — attempt {delivery.attempt_count} of {MAX_ATTEMPTS}"
+            )
 
             if delivery.attempt_count >= MAX_ATTEMPTS:
                 delivery.status = "failed"

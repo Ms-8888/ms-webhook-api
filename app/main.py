@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
 from redis.exceptions import ConnectionError, TimeoutError
-
 from sqlalchemy import func, select
 
 from app.config import settings
@@ -36,7 +35,10 @@ async def lifespan(app: FastAPI):
                 raw_key = Tenant.generate_api_key()
                 db.add(Tenant(name="Demo Tenant", api_key_hash=Tenant.hash_api_key(raw_key)))
                 await db.commit()
-                logger.warning("=== DEMO TENANT CREATED — copy API key from Render env or DB, do not log raw keys in production ===")
+                logger.warning(
+                    "=== DEMO TENANT CREATED — copy API key from Render env or DB, "
+                    "do not log raw keys in production ==="
+                )
                 logger.warning("=== DEMO API KEY (retrieve once): %s ===", raw_key)
     except Exception as exc:
         logger.error("Seed step failed (non-fatal): %s", exc)

@@ -1,6 +1,6 @@
 # ms-webhook-api
 
-A production-ready async webhook delivery API. Register endpoint URLs, fire events, and the system fans out signed HTTP POST requests to all your endpoints — with automatic retry logic and full delivery tracking.
+An async webhook delivery API. Register endpoint URLs, fire events, and the system fans out signed HTTP POST requests to all your endpoints — with automatic retry logic and full delivery tracking.
 
 Built with FastAPI, PostgreSQL, and Redis. Companion dashboard: [ms-webhook-ui](https://github.com/Ms-8888/ms-webhook-ui).
 
@@ -55,9 +55,13 @@ git clone https://github.com/Ms-8888/ms-webhook-api
 cd ms-webhook-api
 cp .env.example .env
 docker compose -f deploy/docker-compose.yml up -d
-alembic upgrade head     # creates schema + indexes
-python -m app.seed       # creates demo tenant, prints your API key
+docker compose -f deploy/docker-compose.yml exec app python -m app.seed   # creates a demo tenant, prints your API key
+curl localhost:8000/health   # {"status":"ok","db":"ok","redis":"ok"}
 ```
+
+The app creates its tables on startup. Alembic migrations (`alembic upgrade head`) are what the Render deploy runs; do not run them on a database the app has already started against.
+
+If ports 5432 or 6379 are already in use on your machine, change the left-hand port numbers in `deploy/docker-compose.yml`.
 
 ---
 
@@ -135,7 +139,7 @@ After 4 failed attempts the delivery is marked `failed` and the error saved. Ret
 
 Each delivery includes:
 ```
-X-Webhook-Signature: sha256=<hmac_sha256(endpoint_secret, payload)>
+X-Webhook-Signature: sha256=<hmac_sha256(endpoint_secret, "<timestamp>." + payload)>
 X-Webhook-Timestamp: <unix_timestamp>
 ```
 
