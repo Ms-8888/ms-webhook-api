@@ -1,0 +1,4 @@
+# Old demo key, rotated and dead; stays in git history
+dad3c01137c2a03e47f8d2884faea632be0bee7c:README.md:curl-auth-header:19
+dad3c01137c2a03e47f8d2884faea632be0bee7c:README.md:generic-api-key:20
+dcb3ae6a773ea62a404947c50d331cf029548385:tests/conftest.py:generic-api-key:52
