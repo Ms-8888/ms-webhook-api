@@ -80,6 +80,7 @@ async def _dispatch_delivery(delivery_id: int, redis: Redis) -> None:
                         "X-Webhook-Signature": signature,
                         "X-Webhook-Timestamp": timestamp,
                         "X-Event-Type": delivery.event.event_type,
+                        "X-Webhook-Delivery-Id": str(delivery.id),
                     },
                 )
             response.raise_for_status()
