@@ -13,7 +13,7 @@ Your application sends one event to this API and gets `202 Accepted` back immedi
 - **Signed:** each request carries an HMAC-SHA256 signature and timestamp so the receiver can verify the sender.
 - **Retried:** failures are retried at +1, +5 and +30 minutes; the retry state is stored in PostgreSQL, so it survives a restart.
 - **Tracked:** every attempt, error and final status is stored and readable through the API.
-- **Guarded:** endpoint URLs pointing at private or local addresses are rejected (SSRF check), API keys are stored hashed, and each tenant is limited to 100 events per hour.
+- **Guarded:** endpoint URLs are resolved and rejected if any address is private, local or otherwise not public, and the delivery connects to the address that was checked (SSRF check), API keys are stored hashed, and each tenant is limited to 100 events per hour.
 
 ---
 
@@ -180,7 +180,9 @@ Auth: `X-API-Key` header on all routes. Rate limit: 100 events/hour per tenant.
 
 - The dispatch and retry workers run inside the API process; there is no separate worker service or horizontal scaling.
 - The hosted demo runs on free tiers (Render, Neon, Upstash), so expect cold starts.
-- Tested with the 10 automated tests in `tests/` and manual runs; there are no load-test numbers.
+- Tested with the 27 automated tests in `tests/` and manual runs; there are no load-test numbers.
+- The SSRF check resolves the host name when an endpoint is registered and again before each delivery, then connects to the checked address. Only the first resolved address is used for delivery, redirects are not followed, and the check was added after the first version, which only compared literal IP addresses.
+- A delivery that never reached the Redis queue is picked up by the retry worker two minutes after it was created. A slow queue can therefore occasionally cause an early retry.
 
 ---
 
