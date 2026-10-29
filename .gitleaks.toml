@@ -2,5 +2,5 @@
 useDefault = true
 
 [allowlist]
-description = "Shared public demo key shown in the README"
-regexes = ['''314b254a8cd3d91f4c08888d8b5544db3c6d24d8b17528fb10fd2d4375956421''']
+description = "Shared public demo key, a retired demo key and a fake test key"
+regexes = ['''314b254a8cd3d91f4c08888d8b5544db3c6d24d8b17528fb10fd2d4375956421''', '''cc9802255d27255bddf2c55d256f8466e1b4600e0a8ef21c2075ab50f16b2049''', '''test-api-key-1234''']
