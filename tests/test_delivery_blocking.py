@@ -107,6 +107,7 @@ async def test_public_dns_pins_connection_to_checked_ip(monkeypatch, redis_clien
     assert request.extensions["sni_hostname"] == "hooks.example.com"
     assert request.headers["X-Event-Type"] == "order.created"
     assert request.headers["X-Webhook-Signature"].startswith("sha256=")
+    assert request.headers["X-Webhook-Delivery-Id"] == str(delivery_id)
 
     delivery = await _load(delivery_id)
     assert delivery.status == "delivered"
