@@ -155,7 +155,10 @@ Each delivery includes:
 ```
 X-Webhook-Signature: sha256=<hmac_sha256(endpoint_secret, "<timestamp>." + payload)>
 X-Webhook-Timestamp: <unix_timestamp>
+X-Webhook-Delivery-Id: <delivery row id>
 ```
+
+`X-Webhook-Delivery-Id` is the id of the delivery row (the `id` returned by `GET /events/{id}/deliveries`). It is the same on every retry of the same delivery, so receivers can use it to discard duplicates. It is not part of the signature; the signature scheme is unchanged.
 
 ---
 
@@ -174,14 +177,22 @@ X-Webhook-Timestamp: <unix_timestamp>
 
 Auth: `X-API-Key` header on all routes. Rate limit: 100 events/hour per tenant.
 
+Caps (set in the environment; see `.env.example`):
+
+| Cap | Default | Setting | Over the cap |
+|-----|---------|---------|--------------|
+| Active endpoints per tenant | 10 | `MAX_ACTIVE_ENDPOINTS_PER_TENANT` | `POST /endpoints` returns `409`; deleting an endpoint frees a slot |
+| Event payload size | 64 KB (65536 bytes of serialised JSON) | `MAX_EVENT_PAYLOAD_BYTES` | `POST /events` returns `413` |
+
 ---
 
 ## Limitations
 
 - The dispatch and retry workers run inside the API process; there is no separate worker service or horizontal scaling.
 - The hosted demo runs on free tiers (Render, Neon, Upstash), so expect cold starts.
-- Tested with the 36 automated tests in `tests/` and manual runs; there are no load-test numbers.
+- Tested with the 41 automated tests in `tests/` and manual runs; there are no load-test numbers.
 - The SSRF check resolves the host name when an endpoint is registered and again before each delivery, then connects to the checked address. Only the first resolved address is used for delivery, redirects are not followed, and the check was added after the first version, which only compared literal IP addresses.
+- Delivery is at-least-once. There is no claim or lock on a delivery, so a requeue or a crash can cause the same delivery to be sent twice. Receivers should deduplicate on `X-Webhook-Delivery-Id`.
 - A delivery that never reached the Redis queue is picked up by the retry worker two minutes after it was created. A slow queue can therefore occasionally cause an early retry.
 
 ---
