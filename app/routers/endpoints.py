@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_tenant
 from app.models import Endpoint, Tenant
@@ -21,6 +22,19 @@ async def create_endpoint(
     error = await validate_endpoint_url(url_str)
     if error:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=error)
+
+    active_count = await db.scalar(
+        select(func.count())
+        .select_from(Endpoint)
+        .where(Endpoint.tenant_id == tenant.id, Endpoint.is_active.is_(True))
+    )
+    limit = settings.max_active_endpoints_per_tenant
+    if active_count >= limit:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Active endpoint limit reached ({limit} per tenant). "
+            "Delete an endpoint before adding another.",
+        )
 
     endpoint = Endpoint(tenant_id=tenant.id, url=url_str, description=body.description)
     db.add(endpoint)
