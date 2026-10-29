@@ -19,21 +19,12 @@ Your application sends one event to this API and gets `202 Accepted` back immedi
 
 ## Live Demo
 
-**API:** `https://ms-webhook-api.onrender.com`  
-**Demo API key:** `YOUR_DEMO_API_KEY`
+**Health check:** [`https://ms-webhook-api.onrender.com/health`](https://ms-webhook-api.onrender.com/health)
+**Dashboard (mock mode, no key needed):** [live dashboard](https://ms-8888.github.io/ms-webhook-ui/)
 
-> Hosted on Render free tier — first request may take ~30s to wake the instance.
+> Hosted on Render free tier, so the first request may take about 30 seconds to wake the instance.
 
-Try it now:
-
-```bash
-curl -X POST https://ms-webhook-api.onrender.com/events \
-  -H "X-API-Key: YOUR_DEMO_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"event_type": "order.created", "payload": {"order_id": 42}}'
-```
-
-Or open the **[live dashboard →](https://ms-8888.github.io/ms-webhook-ui/)** and paste the key into Settings.
+The hosted API has no public key, because events it accepts are delivered to the URLs you give it. To send real events, run it locally (see Quick Start): the seed command prints your own API key.
 
 ---
 
