@@ -43,3 +43,31 @@ async def test_health(client):
     response = await client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] in ("ok", "degraded")
+
+
+@pytest.mark.asyncio
+async def test_oversized_payload_returns_413(client, tenant, monkeypatch):
+    monkeypatch.setattr("app.routers.events.settings.max_event_payload_bytes", 100)
+    _, api_key = tenant
+    response = await client.post(
+        "/events",
+        json={"event_type": "big", "payload": {"blob": "x" * 200}},
+        headers={"X-API-Key": api_key},
+    )
+    assert response.status_code == 413
+    assert "maximum is 100 bytes" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_payload_at_the_limit_is_accepted(client, tenant, monkeypatch):
+    import json
+
+    payload = {"blob": "x" * 50}
+    monkeypatch.setattr(
+        "app.routers.events.settings.max_event_payload_bytes", len(json.dumps(payload).encode())
+    )
+    _, api_key = tenant
+    response = await client.post(
+        "/events", json={"event_type": "ok", "payload": payload}, headers={"X-API-Key": api_key}
+    )
+    assert response.status_code == 202
