@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends, status
+import json
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.dependencies import check_rate_limit, get_current_tenant, get_redis
 from app.models import Delivery, Endpoint, Event, Tenant
@@ -19,6 +22,15 @@ async def fire_event(
     db: AsyncSession = Depends(get_db),
     redis: Redis = Depends(get_redis),
 ):
+    payload_size = len(json.dumps(body.payload).encode())
+    max_size = settings.max_event_payload_bytes
+    if payload_size > max_size:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Event payload is {payload_size} bytes; the maximum is {max_size} bytes "
+            "of serialised JSON.",
+        )
+
     event = Event(tenant_id=tenant.id, event_type=body.event_type, payload=body.payload)
     db.add(event)
     await db.flush()
