@@ -44,13 +44,15 @@ async def test_public_hostname_is_accepted():
 @pytest.mark.asyncio
 async def test_hostname_resolving_to_private_address_is_rejected(monkeypatch):
     _resolves_to(monkeypatch, "10.0.0.5")
-    assert await auth.validate_endpoint_url("https://innocent.example.com/in") == auth.BLOCKED_MESSAGE
+    error = await auth.validate_endpoint_url("https://innocent.example.com/in")
+    assert error == auth.BLOCKED_MESSAGE
 
 
 @pytest.mark.asyncio
 async def test_one_private_address_among_public_ones_rejects_the_url(monkeypatch):
     _resolves_to(monkeypatch, "93.184.216.34", "192.168.0.10")
-    assert await auth.validate_endpoint_url("https://mixed.example.com/in") == auth.BLOCKED_MESSAGE
+    error = await auth.validate_endpoint_url("https://mixed.example.com/in")
+    assert error == auth.BLOCKED_MESSAGE
 
 
 @pytest.mark.asyncio
@@ -59,7 +61,8 @@ async def test_unresolvable_hostname_is_rejected(monkeypatch):
         raise OSError("no such host")
 
     monkeypatch.setattr("app.services.auth._getaddrinfo", boom)
-    assert await auth.validate_endpoint_url("https://nope.example.com/in") == "URL hostname could not be resolved"
+    error = await auth.validate_endpoint_url("https://nope.example.com/in")
+    assert error == "URL hostname could not be resolved"
 
 
 @pytest.mark.asyncio
@@ -67,13 +70,17 @@ async def test_api_rejects_hostname_that_resolves_to_private_address(client, ten
     _, api_key = tenant
     _resolves_to(monkeypatch, "127.0.0.1")
     response = await client.post(
-        "/endpoints", json={"url": "https://rebind.example.com/hook"}, headers={"X-API-Key": api_key}
+        "/endpoints",
+        json={"url": "https://rebind.example.com/hook"},
+        headers={"X-API-Key": api_key},
     )
     assert response.status_code == 422
 
 
 def test_pinned_request_keeps_name_for_host_header_and_tls():
-    url, headers, extensions = _pin_request("https://hooks.example.com:8443/in?x=1", "93.184.216.34")
+    url, headers, extensions = _pin_request(
+        "https://hooks.example.com:8443/in?x=1", "93.184.216.34"
+    )
     assert url.host == "93.184.216.34" and url.port == 8443 and url.path == "/in"
     assert headers == {"Host": "hooks.example.com:8443"}
     assert extensions == {"sni_hostname": "hooks.example.com"}

@@ -66,7 +66,9 @@ async def _dispatch_delivery(delivery_id: int, redis: Redis) -> None:
                 return
             pinned_url, host_headers, extensions = _pin_request(endpoint.url, addresses[0])
 
-            async with httpx.AsyncClient(timeout=DELIVERY_TIMEOUT, follow_redirects=False) as client:
+            async with httpx.AsyncClient(
+                timeout=DELIVERY_TIMEOUT, follow_redirects=False
+            ) as client:
                 response = await client.post(
                     pinned_url,
                     content=payload_bytes,
