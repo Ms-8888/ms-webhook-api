@@ -180,7 +180,7 @@ Auth: `X-API-Key` header on all routes. Rate limit: 100 events/hour per tenant.
 
 - The dispatch and retry workers run inside the API process; there is no separate worker service or horizontal scaling.
 - The hosted demo runs on free tiers (Render, Neon, Upstash), so expect cold starts.
-- Tested with the 27 automated tests in `tests/` and manual runs; there are no load-test numbers.
+- Tested with the 36 automated tests in `tests/` and manual runs; there are no load-test numbers.
 - The SSRF check resolves the host name when an endpoint is registered and again before each delivery, then connects to the checked address. Only the first resolved address is used for delivery, redirects are not followed, and the check was added after the first version, which only compared literal IP addresses.
 - A delivery that never reached the Redis queue is picked up by the retry worker two minutes after it was created. A slow queue can therefore occasionally cause an early retry.
 

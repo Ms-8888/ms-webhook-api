@@ -30,7 +30,8 @@ def _sign_payload(secret: str, payload: bytes, timestamp: str) -> str:
 def _pin_request(url: str, address: str) -> tuple[httpx.URL, dict[str, str], dict[str, str]]:
     """Connect to the address that was checked, not to whatever the name resolves to now."""
     original = httpx.URL(url)
-    host_header = original.host if original.port is None else f"{original.host}:{original.port}"
+    host = f"[{original.host}]" if ":" in original.host else original.host
+    host_header = host if original.port is None else f"{host}:{original.port}"
     pinned = original.copy_with(host=address)
     return pinned, {"Host": host_header}, {"sni_hostname": original.host}
 
