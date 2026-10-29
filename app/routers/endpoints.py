@@ -18,7 +18,7 @@ async def create_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     url_str = str(body.url)
-    error = validate_endpoint_url(url_str)
+    error = await validate_endpoint_url(url_str)
     if error:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=error)
 

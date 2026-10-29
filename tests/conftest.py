@@ -1,6 +1,7 @@
 import os
 import secrets
 
+import pytest
 import pytest_asyncio
 import redis.asyncio as aioredis
 from httpx import ASGITransport, AsyncClient
@@ -66,3 +67,13 @@ async def client(db: AsyncSession, redis_client):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         yield c
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def fake_dns(monkeypatch):
+    """Resolve every name to a public address unless a test says otherwise."""
+
+    async def public(host, port):
+        return [(2, 1, 6, "", ("93.184.216.34", port))]
+
+    monkeypatch.setattr("app.services.auth._getaddrinfo", public)
