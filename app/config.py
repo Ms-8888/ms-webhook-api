@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     database_url: str
     redis_url: str = "redis://localhost:6379"
+    max_active_endpoints_per_tenant: int = 10
+    max_event_payload_bytes: int = 65536
 
     @field_validator("database_url")
     @classmethod
