@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Shared public demo key shown in the README"
+regexes = ['''314b254a8cd3d91f4c08888d8b5544db3c6d24d8b17528fb10fd2d4375956421''']
